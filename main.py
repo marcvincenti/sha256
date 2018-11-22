@@ -403,7 +403,7 @@ def sha256(input_string):
     return finalize(bool_values)
 
 msg = "0xDEADBEEF"
-custom_implem = hex(int(''.join(['1' if b else '0' for b in sha256(msg)]),2))[2:-1]
+custom_implem = format(int(''.join(['1' if b else '0' for b in sha256(msg)]),2),'064x')
 classic_implem = hashlib.sha256(msg).hexdigest()
 
 print custom_implem
