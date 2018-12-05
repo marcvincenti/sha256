@@ -80,17 +80,6 @@ sha_bool_constants = [
     [True, True, False, False, False, True, True, False, False, True, True, True, False, False, False, True, False, True, True, True, True, False, False, False, True, True, True, True, False, False, True, False]
 ]
 
-def message_pre_pro(string_input):
-    bit_list = []
-    for i in range(len(string_input)):
-        bit_list.extend([True if b == '1' else False for b in format(ord(string_input[i]),'08b')])
-    pad_one = bit_list + [True]
-    pad_len = len(pad_one)
-    back_append_0 = [False] * ((448 - pad_len) % 512)
-    back_append_1 = [True if b == '1' else False for b in format(len(bit_list),'064b')]
-    full_bit_list = pad_one + back_append_0 + back_append_1
-    return [full_bit_list[x:x+32] for x in range(0, len(full_bit_list), 32)]
-
 def bool_32_addition(a, b):
     r_31 = a[31] and b[31]
     r_30 = (a[30] and b[30]) or (a[30] and r_31) or (b[30] and r_31)
@@ -375,11 +364,15 @@ def bool_s_1(x):
         x[14] ^ x[12] ^ x[21]
     ]
 
-def finalize(bool_values):
-    result = []
-    for x in range(0, 256, 32):
-        result.extend(bool_32_addition(bool_values[x:x+32], initial_bool_values[x:x+32]))
-    return result
+def message_pre_pro(string_input):
+    bit_list = []
+    for i in range(len(string_input)):
+        bit_list.extend([True if b == '1' else False for b in format(ord(string_input[i]),'08b')])
+    pad_one = bit_list + [True]
+    back_append_0 = [False] * ((448 - len(pad_one)) % 512)
+    back_append_1 = [True if b == '1' else False for b in format(len(bit_list),'064b')]
+    full_bit_list = pad_one + back_append_0 + back_append_1
+    return [full_bit_list[x:x+32] for x in range(0, len(full_bit_list), 32)]
 
 def iteration(bool_values, w_t, k_t):
     t_1 = bool_32_addition(w_t, k_t) # w_t + k_t
@@ -389,18 +382,24 @@ def iteration(bool_values, w_t, k_t):
     t_2 = bool_32_addition(bool_e_0(bool_values[0:32]), bool_Maj(bool_values[0:32], bool_values[32:64], bool_values[64:96]))
     return bool_32_addition(t_1, t_2) + bool_values[0:32] + bool_values[32:64] + bool_values[64:96] + bool_32_addition(bool_values[96:128], t_1) + bool_values[128:160] + bool_values[160:192] + bool_values[192:224]
 
-def sha256(input_string):
-    # process input
-    w_t = message_pre_pro(input_string)
-    # start sha-2 process
-    bool_values = initial_bool_values
+def update(h_t, w_t):
+    bool_values = h_t
     for i in range(64):
         if i > 15:
             r1 = bool_32_addition(bool_s_1(w_t[i-2]), w_t[i-7])
             r2 = bool_32_addition(bool_s_0(w_t[i-15]),  w_t[i-16])
             w_t.append(bool_32_addition(r1, r2))
         bool_values = iteration(bool_values, w_t[i], sha_bool_constants[i])
-    return finalize(bool_values)
+    for x in range(0, 256, 32):
+        bool_values[x:x+32] = bool_32_addition(bool_values[x:x+32], h_t[x:x+32])
+    return bool_values
+
+def sha256(input_string):
+    h_t = initial_bool_values
+    preprocessed_input = message_pre_pro(input_string)
+    for i in range(0, len(preprocessed_input), 16):
+        h_t = update(h_t, preprocessed_input[i:i+16])
+    return h_t
 
 msg = "0xDEADBEEF"
 custom_implem = format(int(''.join(['1' if b else '0' for b in sha256(msg)]),2),'064x')
