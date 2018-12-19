@@ -5,7 +5,7 @@ INCD = include
 OBJD = obj
 EXEC = sha256
 
-OBJFILES = preprocess.o main.o
+OBJFILES = operations.o preprocess.o hash.o main.o
 OBJS = $(OBJFILES:%.o=$(OBJD)/%.o)
 
 default: init $(EXEC)
