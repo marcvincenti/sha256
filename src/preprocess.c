@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../include/preprocess.h"
@@ -28,14 +27,14 @@ char* preProcessInput(char* input) {
 
   /* Read input */
   for (; cpt < input_len; cpt = cpt + 1) {
-    result[8*cpt] = input[cpt] & 128 ? 1 : 0;
-    result[8*cpt+1] = input[cpt] & 64 ? 1 : 0;
-    result[8*cpt+2] = input[cpt] & 32 ? 1 : 0;
-    result[8*cpt+3] = input[cpt] & 16 ? 1 : 0;
-    result[8*cpt+4] = input[cpt] & 8 ? 1 : 0;
-    result[8*cpt+5] = input[cpt] & 4 ? 1 : 0;
-    result[8*cpt+6] = input[cpt] & 2 ? 1 : 0;
-    result[8*cpt+7] = input[cpt] & 1 ? 1 : 0;
+    result[8*cpt] =   (input[cpt] >> 7) & 1;
+    result[8*cpt+1] = (input[cpt] >> 6) & 1;
+    result[8*cpt+2] = (input[cpt] >> 5) & 1;
+    result[8*cpt+3] = (input[cpt] >> 4) & 1;
+    result[8*cpt+4] = (input[cpt] >> 3) & 1;
+    result[8*cpt+5] = (input[cpt] >> 2) & 1;
+    result[8*cpt+6] = (input[cpt] >> 1) & 1;
+    result[8*cpt+7] = input[cpt] & 1;
   }
 
   /* Bit padding */

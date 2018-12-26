@@ -5,7 +5,7 @@
  * Process a 32bits addition
  * The result need to be freed
  */
-char* bool_add_32(char a[], char b[]) {
+char* bool_add_32(char* a, char* b) {
   int i;
   char* res = malloc(32);
   char r[32];
@@ -35,7 +35,7 @@ char* bool_s_0(char* x) {
 }
 
 /*
- * Process a S0 word function
+ * Process a S1 word function
  * The result need to be freed
  */
 char* bool_s_1(char* x) {
@@ -46,6 +46,58 @@ char* bool_s_1(char* x) {
   }
   for (; i < 32; i++) {
     res[i] = x[(i - 17) & 31] ^ x[(i - 19) & 31] ^ x[i - 10];
+  }
+  return res;
+}
+
+/*
+ * Process a E0 word function
+ * The result need to be freed
+ */
+char* bool_e_0(char* x) {
+  int i = 0;
+  char* res = malloc(32);
+  for (; i < 32; i++) {
+    res[i] = x[(i - 2) & 31] ^ x[(i - 13) & 31] ^ x[(i - 22) & 31];
+  }
+  return res;
+}
+
+/*
+ * Process a E1 word function
+ * The result need to be freed
+ */
+char* bool_e_1(char* x) {
+  int i = 0;
+  char* res = malloc(32);
+  for (; i < 32; i++) {
+    res[i] = x[(i - 6) & 31] ^ x[(i - 11) & 31] ^ x[(i - 25) & 31];
+  }
+  return res;
+}
+
+/*
+ * Process a Ch word function
+ * The result need to be freed
+ */
+char* bool_ch(char* x, char* y, char* z) {
+  int i = 0;
+  char* res = malloc(32);
+  for (; i < 32; i++) {
+    res[i] = (x[i] & y[i]) || ((!x[i]) & z[i]);
+  }
+  return res;
+}
+
+/*
+ * Process a Maj word function
+ * The result need to be freed
+ */
+char* bool_maj(char* x, char* y, char* z) {
+  int i = 0;
+  char* res = malloc(32);
+  for (; i < 32; i++) {
+    res[i] = (x[i] & y[i]) || (x[i] & z[i]) || (y[i] & z[i]);
   }
   return res;
 }

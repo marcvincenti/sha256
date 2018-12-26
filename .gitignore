@@ -2,3 +2,5 @@
 
 obj/
 sha256
+
+*.dSYM/
