@@ -1,15 +1,17 @@
 #ifndef OPERATIONS_H
 #define OPERATIONS_H
 
-char* bool_add_32(char*, char*);
+#include "./graph.h"
 
-char* bool_s_0(char*);
-char* bool_s_1(char*);
+node** bool_add_32(node**, node**);
 
-char* bool_e_0(char*);
-char* bool_e_1(char*);
+node** bool_s_0(node**);
+node** bool_s_1(node**);
 
-char* bool_ch(char*, char*, char*);
-char* bool_maj(char*, char*, char*);
+node** bool_e_0(node**);
+node** bool_e_1(node**);
+
+node** bool_ch(node**, node**, node**);
+node** bool_maj(node**, node**, node**);
 
 #endif

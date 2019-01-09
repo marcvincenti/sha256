@@ -1,10 +1,12 @@
 #ifndef PREPROCESS_H
 #define PREPROCESS_H
 
+#include "./graph.h"
+
 #define BLOCK_SIZE 512
 
 int nbBlocksNeeded(int);
 
-char* preProcessInput(char*);
+node** preProcessInput(char*);
 
 #endif

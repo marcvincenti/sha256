@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "../include/graph.h"
 #include "../include/hash.h"
 
 int main (int argc, char* argv[]) {
-  char* hashed;
+  node** hashed;
   int j;
   if (argc == 2) {
     hashed = hash(argv[1]);
     for (j = 0; j < 256; j++) {
-      if (hashed[j]) {
+      if (get_val(hashed[j])) {
         fprintf(stdout, "1");
       } else {
         fprintf(stdout, "0");

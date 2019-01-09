@@ -86,17 +86,17 @@ char CONST_SHA_VALUES[64][32] = { \
 /*
  * Calculate w_t with a given 512-bit chunk
  */
-char* process_wt(char* w_t, char* chunk) {
+node** process_wt(node** w_t, node** chunk) {
   int i;
-  char* s0, * s1, * r0, * r1, * res;
-  memcpy(w_t, chunk, 512);
+  node** s0, ** s1, ** r0, ** r1, ** res;
+  memcpy(w_t, chunk, sizeof(node*) * 512);
   for (i = 16; i < 64; i++ ) {
     s0 = bool_s_0(&w_t[(i-15)*32]);
     r0 = bool_add_32(s0, &w_t[(i-16)*32]);
     s1 = bool_s_1(&w_t[(i-2)*32]);
     r1 = bool_add_32(s1, &w_t[(i-7)*32]);
     res = bool_add_32(r0, r1);
-    memcpy(&w_t[i*32], res, 32);
+    memcpy(&w_t[i*32], res, sizeof(node*) * 32);
     free(s0);
     free(s1);
     free(r0);
@@ -109,22 +109,22 @@ char* process_wt(char* w_t, char* chunk) {
 /*
  * Make one round of SHA-2 function
  */
-char* iterate(char* h_t, char* w, char* const_sha) {
-  char* t1 = bool_add_32(w, const_sha);
-  char* t2 = bool_add_32(t1, &h_t[224]);
-  char* e1 = bool_e_1(&h_t[128]);
-  char* t3 = bool_add_32(t2, e1);
-  char* ch = bool_ch(&h_t[128], &h_t[160], &h_t[192]);
-  char* T1 = bool_add_32(t3, ch);
-  char* t4 = bool_add_32(T1, &h_t[96]);
-  char* e0 = bool_e_0(h_t);
-  char* maj= bool_maj(h_t, &h_t[32], &h_t[64]);
-  char* T2 = bool_add_32(e0, maj);
-  char* t5 = bool_add_32(T1, T2);
-  memcpy(&h_t[160], &h_t[128], 96);
-  memcpy(&h_t[128], t4, 32);
-  memcpy(&h_t[32], h_t, 96);
-  memcpy(h_t, t5, 32);
+node** iterate(node** h_t, node** w, node** const_sha) {
+  node** t1 = bool_add_32(w, const_sha);
+  node** t2 = bool_add_32(t1, &h_t[224]);
+  node** e1 = bool_e_1(&h_t[128]);
+  node** t3 = bool_add_32(t2, e1);
+  node** ch = bool_ch(&h_t[128], &h_t[160], &h_t[192]);
+  node** T1 = bool_add_32(t3, ch);
+  node** t4 = bool_add_32(T1, &h_t[96]);
+  node** e0 = bool_e_0(h_t);
+  node** maj= bool_maj(h_t, &h_t[32], &h_t[64]);
+  node** T2 = bool_add_32(e0, maj);
+  node** t5 = bool_add_32(T1, T2);
+  memcpy(&h_t[160], &h_t[128], sizeof(node*) * 96);
+  memcpy(&h_t[128], t4, sizeof(node*) * 32);
+  memcpy(&h_t[32], h_t, sizeof(node*) * 96);
+  memcpy(h_t, t5, sizeof(node*) * 32);
   free(t1); free(t2); free(t3); free(t4); free(t5);
   free(e0); free(e1);
   free(ch); free(maj);
@@ -135,18 +135,26 @@ char* iterate(char* h_t, char* w, char* const_sha) {
 /*
  * Update current hash value given h_t and w_t
  */
-char* update(char* h_t, char* w_t) {
-  int i;
-  char* initial_h_t = memcpy(malloc(256), h_t, 256);
-  char* temp;
+node** update(node** h_t, node** w_t) {
+  int i, j;
+  node** initial_h_t = memcpy(malloc(sizeof(node*) * 256), h_t, sizeof(node*) * 256);
+  node** const_values = malloc(sizeof(node*) * 64 * 32);
+  node** temp;
+  /* Initialize const values */
+  for (i = 0; i < 64; i++) {
+    for (j = 0; j < 32; j++) {
+      const_values[i*32+j] = new_constant(CONST_SHA_VALUES[i][j]);
+    }
+  }
   /* Compression function main loop */
   for (i = 0; i < 64; i++) {
-    h_t = iterate(h_t, &w_t[i*32], &CONST_SHA_VALUES[i][0]);
+    h_t = iterate(h_t, &w_t[i*32], &const_values[i*32]);
   }
+  free(const_values);
   /* Add the compressed chunk to the current hash value */
   for (i = 0; i < 8; i++) {
     temp = bool_add_32(&initial_h_t[i*32], &h_t[i*32]);
-    memcpy(&h_t[i*32], temp, 32);
+    memcpy(&h_t[i*32], temp, sizeof(node*) * 32);
     free(temp);
   }
   free(initial_h_t);
@@ -155,17 +163,21 @@ char* update(char* h_t, char* w_t) {
 
 /*
  * Process an input of bytes and return a list of bits
- * The result need to be freed
  */
-char* hash(char* input) {
-  char* w_t = malloc(2048);
-  char* h_t = memcpy(malloc(256), &INIT_SHA_VALUES, 256);
-  char* chunks = preProcessInput(input);
+node** hash(char* input) {
+  node** h_t = malloc(sizeof(node*) * 256);
+  node** w_t = malloc(sizeof(node*) * 2048);
+  node** chunks = preProcessInput(input);
   int nb_blocks = nbBlocksNeeded(strlen(input));
   int i;
+  /* initialise h_t with INIT_SHA_VALUES */
+  for (i = 0; i < 256; i++) {
+    h_t[i] = new_constant(INIT_SHA_VALUES[i]);
+  }
+  /* then update h_t with each blocks */
   for (i = 0; i < nb_blocks; i++) {
     /* prepare w_t */
-    process_wt(w_t, chunks+512*i);
+    process_wt(w_t, &chunks[512*i]);
     /* update h_t with w_t */
     h_t = update(h_t, w_t);
   }

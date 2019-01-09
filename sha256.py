@@ -402,10 +402,11 @@ def sha256(input_string):
     return h_t
 
 msg = "0xDEADBEEF"
-custom_implem = format(int(''.join(['1' if b else '0' for b in sha256(msg)]),2),'064x')
-classic_implem = hashlib.sha256(msg).hexdigest()
+#custom_implem = format(int(''.join(['1' if b else '0' for b in sha256(msg)]),2),'064x')
+#classic_implem = hashlib.sha256(msg).hexdigest()
 
-print custom_implem
-print  classic_implem
+print ''.join(['1' if b else '0' for b in sha256(msg)])
+#print custom_implem
+#print  classic_implem
 
-assert custom_implem == classic_implem
+#assert custom_implem == classic_implem
