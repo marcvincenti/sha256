@@ -1,8 +1,8 @@
 #ifndef HASH_H
 #define HASH_H
 
-#include "./graph.h"
+#include "./cnf.h"
 
-node** hash(char*);
+value** hash(char*);
 
 #endif

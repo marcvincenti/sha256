@@ -1,17 +1,17 @@
 #ifndef OPERATIONS_H
 #define OPERATIONS_H
 
-#include "./graph.h"
+#include "./cnf.h"
 
-node** bool_add_32(node**, node**);
+value** bool_add_32(cnf*, value**, value**);
 
-node** bool_s_0(node**);
-node** bool_s_1(node**);
+value** bool_s_0(cnf*, value**);
+value** bool_s_1(cnf*, value**);
 
-node** bool_e_0(node**);
-node** bool_e_1(node**);
+value** bool_e_0(cnf*, value**);
+value** bool_e_1(cnf*, value**);
 
-node** bool_ch(node**, node**, node**);
-node** bool_maj(node**, node**, node**);
+value** bool_ch(cnf*, value**, value**, value**);
+value** bool_maj(cnf*, value**, value**, value**);
 
 #endif

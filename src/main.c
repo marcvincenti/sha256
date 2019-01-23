@@ -1,18 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/graph.h"
+#include "../include/cnf.h"
 #include "../include/hash.h"
 
 int main (int argc, char* argv[]) {
-  node** hashed;
+  value** hashed;
   int j;
   if (argc == 2) {
     hashed = hash(argv[1]);
     for (j = 0; j < 256; j++) {
-      if (get_val(hashed[j])) {
-        fprintf(stdout, "1");
-      } else {
-        fprintf(stdout, "0");
+      if (hashed[j]->type == constant) {
+        if (hashed[j]->value.b) {
+          fprintf(stdout, "1");
+        } else {
+          fprintf(stdout, "0");
+        }
       }
     }
     fprintf(stdout, "\n");
