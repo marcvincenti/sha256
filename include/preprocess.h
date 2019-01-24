@@ -5,8 +5,8 @@
 
 #define BLOCK_SIZE 512
 
-int nbBlocksNeeded(int);
+int nbBlocksNeeded(int, int);
 
-value** preProcessInput(cnf*, char*);
+value** preProcessInput(cnf*, char*, int);
 
 #endif

@@ -164,12 +164,12 @@ value** update(cnf* cnf, value** h_t, value** w_t) {
 /*
  * Process an input of bytes and return a list of bits
  */
-value** hash(char* input) {
+value** hash(char* input, int nonce_size) {
   cnf* cnf = new_cnf();
   value** h_t = malloc(sizeof(value*) * 256);
   value** w_t = malloc(sizeof(value*) * 2048);
-  value** chunks = preProcessInput(cnf, input);
-  int nb_blocks = nbBlocksNeeded(strlen(input) << 3);
+  value** chunks = preProcessInput(cnf, input, nonce_size);
+  int nb_blocks = nbBlocksNeeded(strlen(input) << 3, nonce_size);
   int i;
   /* initialise h_t with INIT_SHA_VALUES */
   for (i = 0; i < 256; i++) {
@@ -182,6 +182,7 @@ value** hash(char* input) {
     /* update h_t with w_t */
     h_t = update(cnf, h_t, w_t);
   }
+  del_cnf(cnf);
   free(w_t);
   free(chunks);
   return h_t;

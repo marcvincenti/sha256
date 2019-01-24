@@ -7,7 +7,7 @@ int main (int argc, char* argv[]) {
   value** hashed;
   int j;
   if (argc == 2) {
-    hashed = hash(argv[1]);
+    hashed = hash(argv[1], 0);
     for (j = 0; j < 256; j++) {
       if (hashed[j]->type == constant) {
         if (hashed[j]->value.b) {

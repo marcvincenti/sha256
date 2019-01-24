@@ -3,6 +3,6 @@
 
 #include "./cnf.h"
 
-value** hash(char*);
+value** hash(char*, int);
 
 #endif
