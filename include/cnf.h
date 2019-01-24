@@ -27,10 +27,13 @@ typedef struct cnf_t {
 
 value* new_boolean(boolean);
 value* new_litteral(cnf*);
-cnf* new_cnf();
-void new_clause(cnf*, litteral, litteral, litteral);
 
+cnf* new_cnf();
 void del_cnf(cnf*);
-void del_clause(clause*);
+
+value* not(cnf*, value*);
+value* or(cnf*, value*, value*);
+value* and(cnf*, value*, value*);
+value* xor(cnf*, value*, value*);
 
 #endif
