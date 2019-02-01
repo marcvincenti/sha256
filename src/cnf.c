@@ -52,6 +52,10 @@ value* not(cnf* cnf, value* a) {
       return new_boolean(false);
     }
   } else {
+    /* ¬a -> (¬r V ¬a) & (r V a) */
+    /* r = new_litteral(cnf);
+    new_clause(cnf, r->value.l, a->value.l, 0);
+    new_clause(cnf, -r->value.l, -a->value.l, 0); */
     r = memcpy(malloc(sizeof(value)), a, sizeof(value));
     r->value.l = -r->value.l;
     return r;
@@ -80,6 +84,51 @@ value* or(cnf* cnf, value* a, value* b) {
     new_clause(cnf, -r->value.l, a->value.l, b->value.l);
     new_clause(cnf, r->value.l, -a->value.l, 0);
     new_clause(cnf, r->value.l, -b->value.l, 0);
+    return r;
+  }
+}
+
+value* or_3(cnf* cnf, value* a, value* b, value* c) {
+  value * r, * s1, * s2, * s3;
+  if (a->type == constant && b->type == constant && c->type == constant) {
+    return new_boolean(a->value.b || b->value.b || c->value.b);
+  } else if (a->type == constant) {
+    if (a->value.b == true) {
+      return a;
+    } else {
+      return or(cnf, b, c);
+    }
+  } else if (b->type == constant) {
+    if (b->value.b == true) {
+      return b;
+    } else {
+      return or(cnf, a, c);
+    }
+  } else if (c->type == constant) {
+    if (c->value.b == true) {
+      return c;
+    } else {
+      return or(cnf, a, b);
+    }
+  } else {
+    /* a V b V c -> (¬r V a V s1) & (¬s1 V b V c)
+                  & (¬r V b V s2) & (¬s2 V a V c)
+                  & (¬r V c V s3) & (¬s3 V a V b)
+                  & (r V ¬a) & (r V ¬b) & (r V ¬c)
+                  & (¬s1 V b V c) & (¬s2 V a V c) & (¬s3 V a V b) */
+    s1 = new_litteral(cnf);
+    s2 = new_litteral(cnf);
+    s3 = new_litteral(cnf);
+    r = new_litteral(cnf);
+    new_clause(cnf, r->value.l, -a->value.l, 0);
+    new_clause(cnf, r->value.l, -b->value.l, 0);
+    new_clause(cnf, r->value.l, -c->value.l, 0);
+    new_clause(cnf, -r->value.l, a->value.l, s1->value.l);
+    new_clause(cnf, -r->value.l, b->value.l, s2->value.l);
+    new_clause(cnf, -r->value.l, c->value.l, s3->value.l);
+    new_clause(cnf, -s1->value.l, b->value.l, c->value.l);
+    new_clause(cnf, -s2->value.l, a->value.l, c->value.l);
+    new_clause(cnf, -s3->value.l, a->value.l, b->value.l);
     return r;
   }
 }
@@ -133,6 +182,67 @@ value* xor(cnf* cnf, value* a, value* b) {
     new_clause(cnf, -r->value.l, -a->value.l, -b->value.l);
     new_clause(cnf, r->value.l, -a->value.l, b->value.l);
     new_clause(cnf, r->value.l, a->value.l, -b->value.l);
+    return r;
+  }
+}
+
+value* xor_3(cnf* cnf, value* a, value* b, value* c) {
+  value * r, * s1, * s2, * s3;
+  if (a->type == constant && b->type == constant && c->type == constant) {
+    return new_boolean(a->value.b ^ b->value.b ^ c->value.b);
+  } else if (a->type == constant) {
+    if (a->value.b == true) {
+      return not(cnf, xor(cnf, b, c));
+    } else {
+      return xor(cnf, b, c);
+    }
+  } else if (b->type == constant) {
+    if (b->value.b == true) {
+      return not(cnf, xor(cnf, a, c));
+    } else {
+      return xor(cnf, a, c);
+    }
+  } else if (c->type == constant) {
+    if (c->value.b == true) {
+      return not(cnf, xor(cnf, a, b));
+    } else {
+      return xor(cnf, a, b);
+    }
+  } else {
+    /* a + b + c -> (s1 V a V ¬b) & (s1 V ¬a V b) & (¬s1 V a V b) & (¬s1 V ¬a V ¬b)
+                  & (s2 V a V ¬c) & (s2 V ¬a V c) & (¬s2 V a V c) & (¬s2 V ¬a V ¬c)
+                  & (s3 V b V ¬c) & (s3 V ¬b V c) & (¬s3 V b V c) & (¬s3 V ¬b V ¬c)
+                  & (r V s1 V ¬c) & (r V ¬s1 V c) & (¬r V s1 V c) & (¬r V ¬s1 V ¬c)
+                  & (r V s2 V ¬b) & (r V ¬s2 V b) & (¬r V s2 V b) & (¬r V ¬s2 V ¬b)
+                  & (r V s3 V ¬a) & (r V ¬s3 V a) & (¬r V s3 V a) & (¬r V ¬s3 V ¬a) */
+    s1 = new_litteral(cnf);
+    s2 = new_litteral(cnf);
+    s3 = new_litteral(cnf);
+    r = new_litteral(cnf);
+    new_clause(cnf, s1->value.l, a->value.l, -b->value.l);
+    new_clause(cnf, s1->value.l, -a->value.l, b->value.l);
+    new_clause(cnf, -s1->value.l, a->value.l, b->value.l);
+    new_clause(cnf, -s1->value.l, -a->value.l, -b->value.l);
+    new_clause(cnf, s2->value.l, a->value.l, -c->value.l);
+    new_clause(cnf, s2->value.l, -a->value.l, c->value.l);
+    new_clause(cnf, -s2->value.l, a->value.l, c->value.l);
+    new_clause(cnf, -s2->value.l, -a->value.l, -c->value.l);
+    new_clause(cnf, s3->value.l, b->value.l, -c->value.l);
+    new_clause(cnf, s3->value.l, -b->value.l, c->value.l);
+    new_clause(cnf, -s3->value.l, b->value.l, c->value.l);
+    new_clause(cnf, -s3->value.l, -b->value.l, -c->value.l);
+    new_clause(cnf, r->value.l, s1->value.l, -c->value.l);
+    new_clause(cnf, r->value.l, -s1->value.l, c->value.l);
+    new_clause(cnf, -r->value.l, s1->value.l, c->value.l);
+    new_clause(cnf, -r->value.l, -s1->value.l, -c->value.l);
+    new_clause(cnf, r->value.l, s2->value.l, -b->value.l);
+    new_clause(cnf, r->value.l, -s2->value.l, b->value.l);
+    new_clause(cnf, -r->value.l, s2->value.l, b->value.l);
+    new_clause(cnf, -r->value.l, -s2->value.l, -b->value.l);
+    new_clause(cnf, r->value.l, s3->value.l, -a->value.l);
+    new_clause(cnf, r->value.l, -s3->value.l, a->value.l);
+    new_clause(cnf, -r->value.l, s3->value.l, a->value.l);
+    new_clause(cnf, -r->value.l, -s3->value.l, -a->value.l);
     return r;
   }
 }

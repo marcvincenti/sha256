@@ -8,16 +8,15 @@ value** bool_add_32(cnf* cnf, value** a, value** b) {
   int i;
   value* r;
   value** res = malloc(sizeof(value*) * 32);
-  r = and(cnf, a[31], b[31]);
   res[31] = xor(cnf, a[31], b[31]);
-  /* res[31] = new_constant(get_val(a[31]) ^ get_val(b[31])); */
+  r = and(cnf, a[31], b[31]);
   for (i = 30; i >= 0; i--) {
-    res[i] = xor(cnf, r, xor(cnf, a[i], b[i]));
-    /* res[i] = new_constant(get_val(a[i]) ^ get_val(b[i]) ^ get_val(r)); */
+    res[i] = xor_3(cnf, r, a[i], b[i]);
     if (i != 0) {
-      r = or(cnf,
+      r = or_3(cnf,
         and(cnf, a[i], b[i]),
-        or(cnf, and(cnf, a[i], r), and(cnf, b[i], r))
+        and(cnf, a[i], r),
+        and(cnf, b[i], r)
       );
     }
   }
@@ -31,14 +30,10 @@ value** bool_s_0(cnf* cnf, value** x) {
   int i = 0;
   value** res = malloc(sizeof(value*) * 32);
   for (; i < 3; i++) {
-    /* a ^ b -> (a V b V ¬r) & (a V ¬b V r) & (¬a V b V r) & (¬a V ¬b V ¬r) */
     res[i] = xor(cnf, x[(i-7)&31], x[(i-18)&31]);
   }
   for (; i < 32; i++) {
-    res[i] = xor(cnf,
-      xor(cnf, x[(i-7)&31], x[(i-18)&31]),
-      x[i-3]
-    );
+    res[i] = xor_3(cnf, x[(i-7)&31], x[(i-18)&31], x[i-3]);
   }
   return res;
 }
@@ -53,10 +48,7 @@ value** bool_s_1(cnf* cnf, value** x) {
     res[i] = xor(cnf, x[(i-17)&31], x[(i-19)&31]);
   }
   for (; i < 32; i++) {
-    res[i] = xor(cnf,
-      xor(cnf, x[(i-17)&31], x[(i-19)&31]),
-      x[i-10]
-    );
+    res[i] = xor_3(cnf, x[(i-17)&31], x[(i-19)&31], x[i-10]);
   }
   return res;
 }
@@ -68,10 +60,7 @@ value** bool_e_0(cnf* cnf, value** x) {
   int i = 0;
   value** res = malloc(sizeof(value*) * 32);
   for (; i < 32; i++) {
-    res[i] = xor(cnf,
-      xor(cnf, x[(i-2)&31], x[(i-13)&31]),
-      x[(i-22)&31]
-    );
+    res[i] = xor_3(cnf, x[(i-2)&31], x[(i-13)&31], x[(i-22)&31]);
   }
   return res;
 }
@@ -83,10 +72,7 @@ value** bool_e_1(cnf* cnf, value** x) {
   int i = 0;
   value** res = malloc(sizeof(value*) * 32);
   for (; i < 32; i++) {
-    res[i] = xor(cnf,
-      xor(cnf, x[(i-6)&31], x[(i-11)&31]),
-      x[(i-25)&31]
-    );
+    res[i] = xor_3(cnf, x[(i-6)&31], x[(i-11)&31], x[(i-25)&31]);
   }
   return res;
 }
@@ -98,7 +84,10 @@ value** bool_ch(cnf* cnf, value** x, value** y, value** z) {
   int i = 0;
   value** res = malloc(sizeof(value*) * 32);
   for (; i < 32; i++) {
-    res[i] = or(cnf, and(cnf, x[i], y[i]), and(cnf, not(cnf, x[i]), z[i]));
+    res[i] = or(cnf,
+      and(cnf, x[i], y[i]),
+      and(cnf, not(cnf, x[i]), z[i])
+    );
   }
   return res;
 }
@@ -110,8 +99,9 @@ value** bool_maj(cnf* cnf, value** x, value** y, value** z) {
   int i = 0;
   value** res = malloc(sizeof(value*) * 32);
   for (; i < 32; i++) {
-    res[i] = or(cnf,
-      or(cnf, and(cnf, x[i], y[i]), and(cnf, x[i], z[i])),
+    res[i] = or_3(cnf,
+      and(cnf, x[i], y[i]),
+      and(cnf, x[i], z[i]),
       and(cnf, y[i], z[i])
     );
   }
