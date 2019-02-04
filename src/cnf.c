@@ -17,7 +17,7 @@ value* new_litteral(cnf* c) {
 }
 
 cnf* new_cnf() {
-  cnf* cnf = malloc(sizeof(cnf));
+  cnf* cnf = malloc(sizeof(struct cnf_t));
   cnf->nb_litterals = 0;
   cnf->head = NULL;
   return cnf;
@@ -129,6 +129,7 @@ value* or_3(cnf* cnf, value* a, value* b, value* c) {
     new_clause(cnf, -s1->value.l, b->value.l, c->value.l);
     new_clause(cnf, -s2->value.l, a->value.l, c->value.l);
     new_clause(cnf, -s3->value.l, a->value.l, b->value.l);
+    free(s3); free(s2); free(s1);
     return r;
   }
 }
@@ -243,6 +244,7 @@ value* xor_3(cnf* cnf, value* a, value* b, value* c) {
     new_clause(cnf, r->value.l, -s3->value.l, a->value.l);
     new_clause(cnf, -r->value.l, s3->value.l, a->value.l);
     new_clause(cnf, -r->value.l, -s3->value.l, -a->value.l);
+    free(s3); free(s2); free(s1);
     return r;
   }
 }

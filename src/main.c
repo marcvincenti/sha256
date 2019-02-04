@@ -110,8 +110,9 @@ int main (int argc, char* argv[]) {
     } else {
       fprintf(stdout, "The cnf and assignment provided doesn't accept a solution.\n");
     }
-    del_cnf(cnf);
+    free(assignment);
     free(hashed);
+    del_cnf(cnf);
     return EXIT_SUCCESS;
   } else {
     fprintf(stderr, "illegal usage of %s\n", argv[0]);

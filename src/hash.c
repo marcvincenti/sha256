@@ -135,22 +135,14 @@ value** iterate(cnf*cnf, value** h_t, value** w, value** const_sha) {
 /*
  * Update current hash value given h_t and w_t
  */
-value** update(cnf* cnf, value** h_t, value** w_t) {
-  int i, j;
-  value** initial_h_t = memcpy(malloc(sizeof(value*) * 256), h_t, sizeof(value*) * 256);
-  value** const_values = malloc(sizeof(value*) * 64 * 32);
+value** update(cnf* cnf, value** h_t, value** w_t, value** const_sha256) {
+  int i;
   value** temp;
-  /* Initialize const values */
-  for (i = 0; i < 64; i++) {
-    for (j = 0; j < 32; j++) {
-      const_values[i*32+j] = new_boolean(CONST_SHA_VALUES[i][j]);
-    }
-  }
+  value** initial_h_t = memcpy(malloc(sizeof(value*) * 256), h_t, sizeof(value*) * 256);
   /* Compression function main loop */
   for (i = 0; i < 64; i++) {
-    h_t = iterate(cnf, h_t, &w_t[i*32], &const_values[i*32]);
+    h_t = iterate(cnf, h_t, &w_t[i*32], &const_sha256[i*32]);
   }
-  free(const_values);
   /* Add the compressed chunk to the current hash value */
   for (i = 0; i < 8; i++) {
     temp = bool_add_32(cnf, &initial_h_t[i*32], &h_t[i*32]);
@@ -167,9 +159,16 @@ value** update(cnf* cnf, value** h_t, value** w_t) {
 value** hash(cnf* cnf, char* input, int nonce_size) {
   value** h_t = malloc(sizeof(value*) * 256);
   value** w_t = malloc(sizeof(value*) * 2048);
+  value** const_sha256 = malloc(sizeof(value*) * 64 * 32);
   value** chunks = preProcessInput(cnf, input, nonce_size);
   int nb_blocks = nbBlocksNeeded(strlen(input) << 3, nonce_size);
-  int i;
+  int i, j;
+  /* initialize const sha256 values */
+  for (i = 0; i < 64; i++) {
+    for (j = 0; j < 32; j++) {
+      const_sha256[i*32+j] = new_boolean(CONST_SHA_VALUES[i][j]);
+    }
+  }
   /* initialise h_t with INIT_SHA_VALUES */
   for (i = 0; i < 256; i++) {
     h_t[i] = new_boolean(INIT_SHA_VALUES[i]);
@@ -179,9 +178,10 @@ value** hash(cnf* cnf, char* input, int nonce_size) {
     /* prepare w_t */
     process_wt(cnf, w_t, &chunks[512*i]);
     /* update h_t with w_t */
-    h_t = update(cnf, h_t, w_t);
+    h_t = update(cnf, h_t, w_t, const_sha256);
   }
-  free(w_t);
+  free(const_sha256);
   free(chunks);
+  free(w_t);
   return h_t;
 }
