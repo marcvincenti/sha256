@@ -29,6 +29,7 @@ value* new_boolean(boolean);
 value* new_litteral(cnf*);
 
 cnf* new_cnf();
+cnf* fix_value(cnf*, litteral);
 void del_cnf(cnf*);
 
 value* not(cnf*, value*);

@@ -32,6 +32,41 @@ void new_clause(cnf* cnf, litteral l_a, litteral l_b, litteral l_c) {
   cnf->head = cl;
 }
 
+cnf* fix_value(cnf* cnf, litteral l) {
+  clause* cl = cnf->head;
+  clause* pred = NULL;
+  while (cl != NULL) {
+    if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l) {
+      /* We satisfy the clause */
+      if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+    } else if (cl->litterals[0] == -l) {
+      if (cl->litterals[1] == 0 && cl->litterals[2] == 0) {
+        /* We unsatisfy the clause */
+        if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+      } else {
+        cl->litterals[0] = 0;
+      }
+    } else if (cl->litterals[1] == -l) {
+      if (cl->litterals[0] == 0 && cl->litterals[2] == 0) {
+        /* We unsatisfy the clause */
+        if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+      } else {
+        cl->litterals[1] = 0;
+      }
+    } else if (cl->litterals[2] == -l) {
+      if (cl->litterals[0] == 0 && cl->litterals[1] == 0) {
+        /* We unsatisfy the clause */
+        if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+      } else {
+        cl->litterals[2] = 0;
+      }
+    }
+    pred = cl;
+    cl = cl->next;
+  }
+  return cnf;
+}
+
 void del_cnf(cnf* cnf) {
   clause* current;
   clause* next = cnf->head;
