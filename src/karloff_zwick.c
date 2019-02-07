@@ -19,7 +19,7 @@ kz_value test_litteral(cnf* cnf, litteral l) {
   clause* cl = cnf->head;
   kz_value res;
   res.nb_sat = res.nb_unsat = 0;
-  while (cl != NULL) {
+  while (cl != NULL && cl->max_litteral >= abs(l)) {
     if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l) {
       /* We satisfy the clause */
       res.nb_sat++;
@@ -47,6 +47,7 @@ kz_value test_litteral(cnf* cnf, litteral l) {
 kz_value karloff_zwick(cnf* cnf) {
   litteral l = pick_litteral(cnf);
   kz_value s1, s2, final;
+  final.nb_sat = final.nb_unsat = 0;
   while (l != 0) {
     s1 = test_litteral(cnf, l);
     s2 = test_litteral(cnf, -l);

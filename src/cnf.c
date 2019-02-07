@@ -28,6 +28,7 @@ void new_clause(cnf* cnf, litteral l_a, litteral l_b, litteral l_c) {
   cl->litterals[0] = l_a;
   cl->litterals[1] = l_b;
   cl->litterals[2] = l_c;
+  cl->max_litteral = cnf->nb_litterals;
   cl->next = cnf->head;
   cnf->head = cl;
 }
@@ -35,7 +36,7 @@ void new_clause(cnf* cnf, litteral l_a, litteral l_b, litteral l_c) {
 cnf* fix_value(cnf* cnf, litteral l) {
   clause* cl = cnf->head;
   clause* pred = NULL;
-  while (cl != NULL) {
+  while (cl != NULL && cl->max_litteral >= abs(l)) {
     if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l) {
       /* We satisfy the clause */
       if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }

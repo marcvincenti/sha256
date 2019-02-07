@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -pedantic
+CFLAGS = -O3 -pedantic
 SRCD = src
 INCD = include
 OBJD = obj

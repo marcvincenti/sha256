@@ -12,8 +12,8 @@ int main (int argc, char* argv[]) {
     cnf = new_cnf();
     hash(cnf, "", strlen(argv[1]) << 3);
     res = karloff_zwick(cnf);
-    fprintf(stdout, "nb_sat: %i\n", res.nb_sat);
-    fprintf(stdout, "nb_unsat: %i\n", res.nb_unsat);
+    fprintf(stdout, "nb_sat: %llu\n", res.nb_sat);
+    fprintf(stdout, "nb_unsat: %llu\n", res.nb_unsat);
     del_cnf(cnf);
     return EXIT_SUCCESS;
   } else {
