@@ -124,52 +124,6 @@ value* or(cnf* cnf, value* a, value* b) {
   }
 }
 
-value* or_3(cnf* cnf, value* a, value* b, value* c) {
-  value * r, * s1, * s2, * s3;
-  if (a->type == constant && b->type == constant && c->type == constant) {
-    return new_boolean(a->value.b || b->value.b || c->value.b);
-  } else if (a->type == constant) {
-    if (a->value.b == true) {
-      return a;
-    } else {
-      return or(cnf, b, c);
-    }
-  } else if (b->type == constant) {
-    if (b->value.b == true) {
-      return b;
-    } else {
-      return or(cnf, a, c);
-    }
-  } else if (c->type == constant) {
-    if (c->value.b == true) {
-      return c;
-    } else {
-      return or(cnf, a, b);
-    }
-  } else {
-    /* a V b V c -> (¬r V a V s1) & (¬s1 V b V c)
-                  & (¬r V b V s2) & (¬s2 V a V c)
-                  & (¬r V c V s3) & (¬s3 V a V b)
-                  & (r V ¬a) & (r V ¬b) & (r V ¬c)
-                  & (¬s1 V b V c) & (¬s2 V a V c) & (¬s3 V a V b) */
-    s1 = new_litteral(cnf);
-    s2 = new_litteral(cnf);
-    s3 = new_litteral(cnf);
-    r = new_litteral(cnf);
-    new_clause(cnf, r->value.l, -a->value.l, 0);
-    new_clause(cnf, r->value.l, -b->value.l, 0);
-    new_clause(cnf, r->value.l, -c->value.l, 0);
-    new_clause(cnf, -r->value.l, a->value.l, s1->value.l);
-    new_clause(cnf, -r->value.l, b->value.l, s2->value.l);
-    new_clause(cnf, -r->value.l, c->value.l, s3->value.l);
-    new_clause(cnf, -s1->value.l, b->value.l, c->value.l);
-    new_clause(cnf, -s2->value.l, a->value.l, c->value.l);
-    new_clause(cnf, -s3->value.l, a->value.l, b->value.l);
-    free(s3); free(s2); free(s1);
-    return r;
-  }
-}
-
 value* and(cnf* cnf, value* a, value* b) {
   value* r;
   if (a->type == constant && b->type == constant) {
@@ -308,8 +262,8 @@ value* ch(cnf* cnf, value* a, value* b, value* c) {
       return and(cnf, a, b);
     }
   } else {
-    /* a & b -> (r V ¬a V ¬b) & (r V a V ¬c)
-              & (¬r V ¬a V b) & (¬r V a V c) */
+    /* (a & b) V (¬a & c) -> (r V ¬a V ¬b) & (r V a V ¬c)
+                           & (¬r V ¬a V b) & (¬r V a V c) */
     r = new_litteral(cnf);
     new_clause(cnf, r->value.l, -a->value.l, -b->value.l);
     new_clause(cnf, r->value.l, a->value.l, -c->value.l);
@@ -347,7 +301,8 @@ value* maj(cnf* cnf, value* a, value* b, value* c) {
       return and(cnf, a, b);
     }
   } else {
-    /* a & b -> (r V ¬a V ¬b) & (r V ¬b V ¬c) & (r V ¬a V ¬c)
+    /* (a & b) V (b & c) V (a & c) ->
+                (r V ¬a V ¬b) & (r V ¬b V ¬c) & (r V ¬a V ¬c)
               & (¬r V a V b) & (¬r V b V c) & (¬r V a V c) */
     r = new_litteral(cnf);
     new_clause(cnf, r->value.l, -a->value.l, -b->value.l);

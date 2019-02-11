@@ -35,7 +35,6 @@ void del_cnf(cnf*);
 
 value* not(cnf*, value*);
 value* or(cnf*, value*, value*);
-value* or_3(cnf*, value*, value*, value*);
 value* and(cnf*, value*, value*);
 value* xor(cnf*, value*, value*);
 value* xor_3(cnf*, value*, value*, value*);

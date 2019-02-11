@@ -13,11 +13,7 @@ value** bool_add_32(cnf* cnf, value** a, value** b) {
   for (i = 30; i >= 0; i--) {
     res[i] = xor_3(cnf, r, a[i], b[i]);
     if (i != 0) {
-      r = or_3(cnf,
-        and(cnf, a[i], b[i]),
-        and(cnf, a[i], r),
-        and(cnf, b[i], r)
-      );
+      r = maj(cnf, a[i], b[i], r);
     }
   }
   return res;
