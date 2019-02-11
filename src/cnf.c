@@ -284,3 +284,78 @@ value* xor_3(cnf* cnf, value* a, value* b, value* c) {
     return r;
   }
 }
+
+value* ch(cnf* cnf, value* a, value* b, value* c) {
+  value* r;
+  if (a->type == constant && b->type == constant && c->type == constant) {
+    return a->value.b ? new_boolean(b->value.b) : new_boolean(c->value.b);
+  } else if (a->type == constant) {
+    if (a->value.b == true) {
+      return b;
+    } else {
+      return c;
+    }
+  } else if (b->type == constant) {
+    if (b->value.b == true) {
+      return or(cnf, a, c);
+    } else {
+      return and(cnf, not(cnf, a), c);
+    }
+  } else if (c->type == constant) {
+    if (c->value.b == true) {
+      return or(cnf, not(cnf, a), b);
+    } else {
+      return and(cnf, a, b);
+    }
+  } else {
+    /* a & b -> (r V ¬a V ¬b) & (r V a V ¬c)
+              & (¬r V ¬a V b) & (¬r V a V c) */
+    r = new_litteral(cnf);
+    new_clause(cnf, r->value.l, -a->value.l, -b->value.l);
+    new_clause(cnf, r->value.l, a->value.l, -c->value.l);
+    new_clause(cnf, -r->value.l, -a->value.l, b->value.l);
+    new_clause(cnf, -r->value.l, a->value.l, c->value.l);
+    return r;
+  }
+}
+
+
+value* maj(cnf* cnf, value* a, value* b, value* c) {
+  value* r;
+  if (a->type == constant && b->type == constant && c->type == constant) {
+    return new_boolean(
+      (a->value.b && b->value.b)
+      ^ (b->value.b && c->value.b)
+      ^ (a->value.b && c->value.b)
+    );
+  } else if (a->type == constant) {
+    if (a->value.b == true) {
+      return or(cnf, b, c);
+    } else {
+      return and(cnf, b, c);
+    }
+  } else if (b->type == constant) {
+    if (b->value.b == true) {
+      return or(cnf, a, c);
+    } else {
+      return and(cnf, a, c);
+    }
+  } else if (c->type == constant) {
+    if (c->value.b == true) {
+      return or(cnf, a, b);
+    } else {
+      return and(cnf, a, b);
+    }
+  } else {
+    /* a & b -> (r V ¬a V ¬b) & (r V ¬b V ¬c) & (r V ¬a V ¬c)
+              & (¬r V a V b) & (¬r V b V c) & (¬r V a V c) */
+    r = new_litteral(cnf);
+    new_clause(cnf, r->value.l, -a->value.l, -b->value.l);
+    new_clause(cnf, r->value.l, -b->value.l, -c->value.l);
+    new_clause(cnf, r->value.l, -a->value.l, -c->value.l);
+    new_clause(cnf, -r->value.l, a->value.l, b->value.l);
+    new_clause(cnf, -r->value.l, b->value.l, c->value.l);
+    new_clause(cnf, -r->value.l, a->value.l, c->value.l);
+    return r;
+  }
+}

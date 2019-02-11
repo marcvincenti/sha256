@@ -39,5 +39,7 @@ value* or_3(cnf*, value*, value*, value*);
 value* and(cnf*, value*, value*);
 value* xor(cnf*, value*, value*);
 value* xor_3(cnf*, value*, value*, value*);
+value* ch(cnf*, value*, value*, value*);
+value* maj(cnf*, value*, value*, value*);
 
 #endif

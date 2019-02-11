@@ -84,10 +84,7 @@ value** bool_ch(cnf* cnf, value** x, value** y, value** z) {
   int i = 0;
   value** res = malloc(sizeof(value*) * 32);
   for (; i < 32; i++) {
-    res[i] = or(cnf,
-      and(cnf, x[i], y[i]),
-      and(cnf, not(cnf, x[i]), z[i])
-    );
+    res[i] = ch(cnf, x[i], y[i], z[i]);
   }
   return res;
 }
@@ -99,11 +96,7 @@ value** bool_maj(cnf* cnf, value** x, value** y, value** z) {
   int i = 0;
   value** res = malloc(sizeof(value*) * 32);
   for (; i < 32; i++) {
-    res[i] = or_3(cnf,
-      and(cnf, x[i], y[i]),
-      and(cnf, x[i], z[i]),
-      and(cnf, y[i], z[i])
-    );
+    res[i] = maj(cnf, x[i], y[i], z[i]);
   }
   return res;
 }
