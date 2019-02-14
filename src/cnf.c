@@ -23,11 +23,12 @@ cnf* new_cnf() {
   return cnf;
 }
 
-void new_clause(cnf* cnf, litteral l_a, litteral l_b, litteral l_c) {
+void new_clause(cnf* cnf, litteral l_a, litteral l_b, litteral l_c, litteral l_d) {
   clause* cl = malloc(sizeof(clause));
   cl->litterals[0] = l_a;
   cl->litterals[1] = l_b;
   cl->litterals[2] = l_c;
+  cl->litterals[3] = l_d;
   cl->max_litteral = cnf->nb_litterals;
   cl->next = cnf->head;
   cnf->head = cl;
@@ -37,29 +38,36 @@ cnf* fix_value(cnf* cnf, litteral l) {
   clause* cl = cnf->head;
   clause* pred = NULL;
   while (cl != NULL && cl->max_litteral >= abs(l)) {
-    if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l) {
+    if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l || cl->litterals[3] == l) {
       /* We satisfy the clause */
       if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
     } else if (cl->litterals[0] == -l) {
-      if (cl->litterals[1] == 0 && cl->litterals[2] == 0) {
+      if (cl->litterals[1] == 0 && cl->litterals[2] == 0 && cl->litterals[3] == 0) {
         /* We unsatisfy the clause */
         if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
       } else {
         cl->litterals[0] = 0;
       }
     } else if (cl->litterals[1] == -l) {
-      if (cl->litterals[0] == 0 && cl->litterals[2] == 0) {
+      if (cl->litterals[0] == 0 && cl->litterals[2] == 0 && cl->litterals[3] == 0) {
         /* We unsatisfy the clause */
         if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
       } else {
         cl->litterals[1] = 0;
       }
     } else if (cl->litterals[2] == -l) {
-      if (cl->litterals[0] == 0 && cl->litterals[1] == 0) {
+      if (cl->litterals[0] == 0 && cl->litterals[1] == 0 && cl->litterals[3] == 0) {
         /* We unsatisfy the clause */
         if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
       } else {
         cl->litterals[2] = 0;
+      }
+    } else if (cl->litterals[3] == -l) {
+      if (cl->litterals[0] == 0 && cl->litterals[1] == 0 && cl->litterals[2] == 0) {
+        /* We unsatisfy the clause */
+        if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+      } else {
+        cl->litterals[3] = 0;
       }
     }
     pred = cl;
@@ -117,9 +125,9 @@ value* or(cnf* cnf, value* a, value* b) {
   } else {
     /* a V b -> (¬r V a V b) & (r V ¬a) & (r V ¬b) */
     r = new_litteral(cnf);
-    new_clause(cnf, -r->value.l, a->value.l, b->value.l);
-    new_clause(cnf, r->value.l, -a->value.l, 0);
-    new_clause(cnf, r->value.l, -b->value.l, 0);
+    new_clause(cnf, -r->value.l, a->value.l, b->value.l, 0);
+    new_clause(cnf, r->value.l, -a->value.l, 0, 0);
+    new_clause(cnf, r->value.l, -b->value.l, 0, 0);
     return r;
   }
 }
@@ -143,9 +151,9 @@ value* and(cnf* cnf, value* a, value* b) {
   } else {
     /* a & b -> (r V ¬a V ¬b) & (¬r V a) & (¬r V b) */
     r = new_litteral(cnf);
-    new_clause(cnf, r->value.l, -a->value.l, -b->value.l);
-    new_clause(cnf, -r->value.l, a->value.l, 0);
-    new_clause(cnf, -r->value.l, b->value.l, 0);
+    new_clause(cnf, r->value.l, -a->value.l, -b->value.l, 0);
+    new_clause(cnf, -r->value.l, a->value.l, 0, 0);
+    new_clause(cnf, -r->value.l, b->value.l, 0, 0);
     return r;
   }
 }
@@ -169,10 +177,10 @@ value* xor(cnf* cnf, value* a, value* b) {
   } else {
     /* a ^ b -> (a V b V ¬r) & (a V ¬b V r) & (¬a V b V r) & (¬a V ¬b V ¬r) */
     r = new_litteral(cnf);
-    new_clause(cnf, -r->value.l, a->value.l, b->value.l);
-    new_clause(cnf, -r->value.l, -a->value.l, -b->value.l);
-    new_clause(cnf, r->value.l, -a->value.l, b->value.l);
-    new_clause(cnf, r->value.l, a->value.l, -b->value.l);
+    new_clause(cnf, -r->value.l, a->value.l, b->value.l, 0);
+    new_clause(cnf, -r->value.l, -a->value.l, -b->value.l, 0);
+    new_clause(cnf, r->value.l, -a->value.l, b->value.l, 0);
+    new_clause(cnf, r->value.l, a->value.l, -b->value.l, 0);
     return r;
   }
 }
@@ -206,35 +214,15 @@ value* xor_3(cnf* cnf, value* a, value* b, value* c) {
                   & (r V s1 V ¬c) & (r V ¬s1 V c) & (¬r V s1 V c) & (¬r V ¬s1 V ¬c)
                   & (r V s2 V ¬b) & (r V ¬s2 V b) & (¬r V s2 V b) & (¬r V ¬s2 V ¬b)
                   & (r V s3 V ¬a) & (r V ¬s3 V a) & (¬r V s3 V a) & (¬r V ¬s3 V ¬a) */
-    s1 = new_litteral(cnf);
-    s2 = new_litteral(cnf);
-    s3 = new_litteral(cnf);
     r = new_litteral(cnf);
-    new_clause(cnf, s1->value.l, a->value.l, -b->value.l);
-    new_clause(cnf, s1->value.l, -a->value.l, b->value.l);
-    new_clause(cnf, -s1->value.l, a->value.l, b->value.l);
-    new_clause(cnf, -s1->value.l, -a->value.l, -b->value.l);
-    new_clause(cnf, s2->value.l, a->value.l, -c->value.l);
-    new_clause(cnf, s2->value.l, -a->value.l, c->value.l);
-    new_clause(cnf, -s2->value.l, a->value.l, c->value.l);
-    new_clause(cnf, -s2->value.l, -a->value.l, -c->value.l);
-    new_clause(cnf, s3->value.l, b->value.l, -c->value.l);
-    new_clause(cnf, s3->value.l, -b->value.l, c->value.l);
-    new_clause(cnf, -s3->value.l, b->value.l, c->value.l);
-    new_clause(cnf, -s3->value.l, -b->value.l, -c->value.l);
-    new_clause(cnf, r->value.l, s1->value.l, -c->value.l);
-    new_clause(cnf, r->value.l, -s1->value.l, c->value.l);
-    new_clause(cnf, -r->value.l, s1->value.l, c->value.l);
-    new_clause(cnf, -r->value.l, -s1->value.l, -c->value.l);
-    new_clause(cnf, r->value.l, s2->value.l, -b->value.l);
-    new_clause(cnf, r->value.l, -s2->value.l, b->value.l);
-    new_clause(cnf, -r->value.l, s2->value.l, b->value.l);
-    new_clause(cnf, -r->value.l, -s2->value.l, -b->value.l);
-    new_clause(cnf, r->value.l, s3->value.l, -a->value.l);
-    new_clause(cnf, r->value.l, -s3->value.l, a->value.l);
-    new_clause(cnf, -r->value.l, s3->value.l, a->value.l);
-    new_clause(cnf, -r->value.l, -s3->value.l, -a->value.l);
-    free(s3); free(s2); free(s1);
+    new_clause(cnf, r->value.l, -a->value.l, b->value.l, c->value.l);
+    new_clause(cnf, r->value.l, a->value.l, -b->value.l, c->value.l);
+    new_clause(cnf, r->value.l, a->value.l, b->value.l, -c->value.l);
+    new_clause(cnf, r->value.l, -a->value.l, -b->value.l, -c->value.l);
+    new_clause(cnf, -r->value.l, a->value.l, b->value.l, c->value.l);
+    new_clause(cnf, -r->value.l, -a->value.l, -b->value.l, c->value.l);
+    new_clause(cnf, -r->value.l, a->value.l, -b->value.l, -c->value.l);
+    new_clause(cnf, -r->value.l, -a->value.l, b->value.l, -c->value.l);
     return r;
   }
 }
@@ -265,10 +253,10 @@ value* ch(cnf* cnf, value* a, value* b, value* c) {
     /* (a & b) V (¬a & c) -> (r V ¬a V ¬b) & (r V a V ¬c)
                            & (¬r V ¬a V b) & (¬r V a V c) */
     r = new_litteral(cnf);
-    new_clause(cnf, r->value.l, -a->value.l, -b->value.l);
-    new_clause(cnf, r->value.l, a->value.l, -c->value.l);
-    new_clause(cnf, -r->value.l, -a->value.l, b->value.l);
-    new_clause(cnf, -r->value.l, a->value.l, c->value.l);
+    new_clause(cnf, r->value.l, -a->value.l, -b->value.l, 0);
+    new_clause(cnf, r->value.l, a->value.l, -c->value.l, 0);
+    new_clause(cnf, -r->value.l, -a->value.l, b->value.l, 0);
+    new_clause(cnf, -r->value.l, a->value.l, c->value.l, 0);
     return r;
   }
 }
@@ -305,12 +293,12 @@ value* maj(cnf* cnf, value* a, value* b, value* c) {
                 (r V ¬a V ¬b) & (r V ¬b V ¬c) & (r V ¬a V ¬c)
               & (¬r V a V b) & (¬r V b V c) & (¬r V a V c) */
     r = new_litteral(cnf);
-    new_clause(cnf, r->value.l, -a->value.l, -b->value.l);
-    new_clause(cnf, r->value.l, -b->value.l, -c->value.l);
-    new_clause(cnf, r->value.l, -a->value.l, -c->value.l);
-    new_clause(cnf, -r->value.l, a->value.l, b->value.l);
-    new_clause(cnf, -r->value.l, b->value.l, c->value.l);
-    new_clause(cnf, -r->value.l, a->value.l, c->value.l);
+    new_clause(cnf, r->value.l, -a->value.l, -b->value.l, 0);
+    new_clause(cnf, r->value.l, -b->value.l, -c->value.l, 0);
+    new_clause(cnf, r->value.l, -a->value.l, -c->value.l, 0);
+    new_clause(cnf, -r->value.l, a->value.l, b->value.l, 0);
+    new_clause(cnf, -r->value.l, b->value.l, c->value.l, 0);
+    new_clause(cnf, -r->value.l, a->value.l, c->value.l, 0);
     return r;
   }
 }
