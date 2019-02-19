@@ -121,9 +121,13 @@ value** iterate(cnf*cnf, value** h_t, value** w, value** const_sha) {
   value** maj= bool_maj(cnf, h_t, &h_t[32], &h_t[64]);
   value** T2 = bool_add_32(cnf, e0, maj);
   value** t5 = bool_add_32(cnf, T1, T2);
-  memcpy(&h_t[160], &h_t[128], sizeof(value*) * 96);
+  memcpy(&h_t[224], &h_t[192], sizeof(value*) * 32);
+  memcpy(&h_t[192], &h_t[160], sizeof(value*) * 32);
+  memcpy(&h_t[160], &h_t[128], sizeof(value*) * 32);
   memcpy(&h_t[128], t4, sizeof(value*) * 32);
-  memcpy(&h_t[32], h_t, sizeof(value*) * 96);
+  memcpy(&h_t[96], &h_t[64], sizeof(value*) * 32);
+  memcpy(&h_t[64], &h_t[32], sizeof(value*) * 32);
+  memcpy(&h_t[32], h_t, sizeof(value*) * 32);
   memcpy(h_t, t5, sizeof(value*) * 32);
   free(t1); free(t2); free(t3); free(t4); free(t5);
   free(e0); free(e1);

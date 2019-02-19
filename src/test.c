@@ -30,26 +30,37 @@ boolean propagate_assignment(cnf* cnf, char* assignment) {
       /* if not satisfied */
       if (!satisfy(assignment, cl->litterals[0])
       && !satisfy(assignment, cl->litterals[1])
-      && !satisfy(assignment, cl->litterals[2])) {
+      && !satisfy(assignment, cl->litterals[2])
+      && !satisfy(assignment, cl->litterals[3])) {
         /* If one possible, set new assignment */
         if(cl->litterals[0] != 0 && assignment[abs(cl->litterals[0])] == 0
           && unsatisfy(assignment, cl->litterals[1])
-          && unsatisfy(assignment, cl->litterals[2])) {
+          && unsatisfy(assignment, cl->litterals[2])
+          && unsatisfy(assignment, cl->litterals[3])) {
           assignment[abs(cl->litterals[0])] = cl->litterals[0] < 0 ? -1 : 1;
           new_assignments++;
         } else if (cl->litterals[1] != 0 && assignment[abs(cl->litterals[1])] == 0
                   && unsatisfy(assignment, cl->litterals[0])
-                  && unsatisfy(assignment, cl->litterals[2])) {
+                  && unsatisfy(assignment, cl->litterals[2])
+                  && unsatisfy(assignment, cl->litterals[3])) {
           assignment[abs(cl->litterals[1])] = cl->litterals[1] < 0 ? -1 : 1;
           new_assignments++;
         } else if (cl->litterals[2] != 0 && assignment[abs(cl->litterals[2])] == 0
                   && unsatisfy(assignment, cl->litterals[0])
-                  && unsatisfy(assignment, cl->litterals[1])) {
+                  && unsatisfy(assignment, cl->litterals[1])
+                  && unsatisfy(assignment, cl->litterals[3])) {
           assignment[abs(cl->litterals[2])] = cl->litterals[2] < 0 ? -1 : 1;
+          new_assignments++;
+        }else if (cl->litterals[3] != 0 && assignment[abs(cl->litterals[3])] == 0
+                  && unsatisfy(assignment, cl->litterals[0])
+                  && unsatisfy(assignment, cl->litterals[1])
+                  && unsatisfy(assignment, cl->litterals[2])) {
+          assignment[abs(cl->litterals[3])] = cl->litterals[3] < 0 ? -1 : 1;
           new_assignments++;
         } else if (unsatisfy(assignment, cl->litterals[0])
                   && unsatisfy(assignment, cl->litterals[1])
-                  && unsatisfy(assignment, cl->litterals[2])) {
+                  && unsatisfy(assignment, cl->litterals[2])
+                  && unsatisfy(assignment, cl->litterals[3])) {
           /* If non-possible, send false */
           return false;
         }
