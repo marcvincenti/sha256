@@ -1,6 +1,8 @@
 #ifndef CNF_H
 #define CNF_H
 
+#include <stdint.h>
+
 typedef enum { false = 0, true = 1 } boolean;
 
 typedef __int32_t litteral;
