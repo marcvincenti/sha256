@@ -13,6 +13,7 @@ union value_u {
 };
 
 typedef struct value_t {
+  int nb_references;
   enum { constant, variable } type;
   union value_u value;
 } value;
@@ -30,6 +31,8 @@ typedef struct cnf_t {
 
 value* new_boolean(boolean);
 value* new_litteral(cnf*);
+value** copy_word(value**, value**, int);
+void free_word(value**, int);
 
 cnf* new_cnf();
 cnf* fix_value(cnf*, litteral);

@@ -15,7 +15,7 @@ const boolean INIT_SHA_VALUES[256] = { \
   0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1  \
 };
 
-const boolean CONST_SHA_VALUES[64][32] = { \
+const boolean CONST_SHA_VALUES[64][WORD_SIZE] = { \
   { 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0 }, \
   { 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1 }, \
   { 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, \
@@ -97,10 +97,10 @@ value** process_wt(cnf* cnf, value** w_t, value** chunk) {
     r1 = bool_add_32(cnf, s1, &w_t[(i-7)*32]);
     res = bool_add_32(cnf, r0, r1);
     memcpy(&w_t[i*32], res, sizeof(value*) * 32);
-    free(s0);
-    free(s1);
-    free(r0);
-    free(r1);
+    free_word(s0, 32);
+    free_word(s1, 32);
+    free_word(r0, 32);
+    free_word(r1, 32);
     free(res);
   }
   return w_t;
@@ -110,6 +110,7 @@ value** process_wt(cnf* cnf, value** w_t, value** chunk) {
  * Make one round of SHA-2 function
  */
 value** iterate(cnf*cnf, value** h_t, value** w, value** const_sha) {
+  int i;
   value** t1 = bool_add_32(cnf, w, const_sha);
   value** t2 = bool_add_32(cnf, t1, &h_t[224]);
   value** e1 = bool_e_1(cnf, &h_t[128]);
@@ -121,18 +122,23 @@ value** iterate(cnf*cnf, value** h_t, value** w, value** const_sha) {
   value** maj= bool_maj(cnf, h_t, &h_t[32], &h_t[64]);
   value** T2 = bool_add_32(cnf, e0, maj);
   value** t5 = bool_add_32(cnf, T1, T2);
+  for (i = 0; i < WORD_SIZE; i++) {
+    free_value(h_t[224+i]);
+    free_value(h_t[96+i]);
+  }
   memcpy(&h_t[224], &h_t[192], sizeof(value*) * 32);
   memcpy(&h_t[192], &h_t[160], sizeof(value*) * 32);
   memcpy(&h_t[160], &h_t[128], sizeof(value*) * 32);
-  memcpy(&h_t[128], t4, sizeof(value*) * 32);
+  copy_word(&h_t[128], t4, 32);
   memcpy(&h_t[96], &h_t[64], sizeof(value*) * 32);
   memcpy(&h_t[64], &h_t[32], sizeof(value*) * 32);
   memcpy(&h_t[32], h_t, sizeof(value*) * 32);
-  memcpy(h_t, t5, sizeof(value*) * 32);
-  free(t1); free(t2); free(t3); free(t4); free(t5);
-  free(e0); free(e1);
-  free(ch); free(maj);
-  free(T1); free(T2);
+  copy_word(h_t, t5, 32);
+  free_word(t1, 32); free_word(t2, 32); free_word(t3, 32);
+  free_word(t4, 32); free_word(t5, 32);
+  free_word(e0, 32); free_word(e1, 32);
+  free_word(ch, 32); free_word(maj, 32);
+  free_word(T1, 32); free_word(T2, 32);
   return h_t;
 }
 
@@ -142,7 +148,7 @@ value** iterate(cnf*cnf, value** h_t, value** w, value** const_sha) {
 value** update(cnf* cnf, value** h_t, value** w_t, value** const_sha256) {
   int i;
   value** temp;
-  value** initial_h_t = memcpy(malloc(sizeof(value*) * 256), h_t, sizeof(value*) * 256);
+  value** initial_h_t = copy_word(malloc(sizeof(value*) * 256), h_t, 256);
   /* Compression function main loop */
   for (i = 0; i < 64; i++) {
     h_t = iterate(cnf, h_t, &w_t[i*32], &const_sha256[i*32]);
@@ -150,10 +156,10 @@ value** update(cnf* cnf, value** h_t, value** w_t, value** const_sha256) {
   /* Add the compressed chunk to the current hash value */
   for (i = 0; i < 8; i++) {
     temp = bool_add_32(cnf, &initial_h_t[i*32], &h_t[i*32]);
-    memcpy(&h_t[i*32], temp, sizeof(value*) * 32);
-    free(temp);
+    copy_word(&h_t[i*32], temp, 32);
+    free_word(temp, 32);
   }
-  free(initial_h_t);
+  free_word(initial_h_t, 256);
   return h_t;
 }
 
@@ -161,16 +167,16 @@ value** update(cnf* cnf, value** h_t, value** w_t, value** const_sha256) {
  * Process an input of bytes and return a list of bits
  */
 value** hash(cnf* cnf, char* input, int nonce_size) {
+  value** w_t;
   value** h_t = malloc(sizeof(value*) * 256);
-  value** w_t = malloc(sizeof(value*) * 2048);
-  value** const_sha256 = malloc(sizeof(value*) * 64 * 32);
+  value** const_sha256 = malloc(sizeof(value*) * WORD_SIZE * 64);
   value** chunks = preProcessInput(cnf, input, nonce_size);
   int nb_blocks = nbBlocksNeeded(strlen(input) << 3, nonce_size);
   int i, j;
   /* initialize const sha256 values */
   for (i = 0; i < 64; i++) {
-    for (j = 0; j < 32; j++) {
-      const_sha256[i*32+j] = new_boolean(CONST_SHA_VALUES[i][j]);
+    for (j = 0; j < WORD_SIZE; j++) {
+      const_sha256[i*WORD_SIZE+j] = new_boolean(CONST_SHA_VALUES[i][j]);
     }
   }
   /* initialise h_t with INIT_SHA_VALUES */
@@ -180,12 +186,14 @@ value** hash(cnf* cnf, char* input, int nonce_size) {
   /* then update h_t with each blocks */
   for (i = 0; i < nb_blocks; i++) {
     /* prepare w_t */
-    process_wt(cnf, w_t, &chunks[512*i]);
+    w_t = malloc(sizeof(value*) * 2048);
+    process_wt(cnf, w_t, &chunks[BLOCK_SIZE*i]);
     /* update h_t with w_t */
     h_t = update(cnf, h_t, w_t, const_sha256);
+    /* delete w_t */
+    free_word(w_t, 2048);
   }
-  free(const_sha256);
   free(chunks);
-  free(w_t);
+  free_word(const_sha256, WORD_SIZE * 64);
   return h_t;
 }

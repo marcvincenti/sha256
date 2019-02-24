@@ -122,7 +122,7 @@ int main (int argc, char* argv[]) {
       fprintf(stdout, "The cnf and assignment provided doesn't accept a solution.\n");
     }
     free(assignment);
-    free(hashed);
+    free_word(hashed, 256);
     del_cnf(cnf);
     return EXIT_SUCCESS;
   } else {

@@ -6,15 +6,17 @@
  */
 value** bool_add_32(cnf* cnf, value** a, value** b) {
   int i;
-  value* r;
+  value * r, * temp;
   value** res = malloc(sizeof(value*) * 32);
   res[31] = xor(cnf, a[31], b[31]);
   r = and(cnf, a[31], b[31]);
   for (i = 30; i >= 0; i--) {
     res[i] = xor_3(cnf, r, a[i], b[i]);
+    temp = r;
     if (i != 0) {
       r = maj(cnf, a[i], b[i], r);
     }
+    free_value(temp);
   }
   return res;
 }

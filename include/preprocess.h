@@ -2,8 +2,7 @@
 #define PREPROCESS_H
 
 #include "./cnf.h"
-
-#define BLOCK_SIZE 512
+#include "./hash.h"
 
 int nbBlocksNeeded(int, int);
 

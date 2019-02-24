@@ -4,6 +4,7 @@
 
 value* new_boolean(boolean b) {
   value* v = malloc(sizeof(value));
+  v->nb_references = 1;
   v->type = constant;
   v->value.b = b;
   return v;
@@ -11,9 +12,35 @@ value* new_boolean(boolean b) {
 
 value* new_litteral(cnf* c) {
   value* v = malloc(sizeof(value));
+  v->nb_references = 1;
   v->type = variable;
   v->value.l = ++(c->nb_litterals);
   return v;
+}
+
+value** copy_word(value** dest, value** src, int size) {
+  int i;
+  memcpy(dest, src, sizeof(value*) * size);
+  for (i = 0; i < size; i++) {
+    dest[i]->nb_references++;
+  }
+  return dest;
+}
+
+void free_value(value* v) {
+  if (v->nb_references <= 1) {
+    free(v);
+  } else {
+    v->nb_references--;
+  }
+}
+
+void free_word(value** v, int size) {
+  int i;
+  for (i = 0; i < size; i++) {
+    free_value(v[i]);
+  }
+  free(v);
 }
 
 cnf* new_cnf() {
@@ -37,41 +64,66 @@ void new_clause(cnf* cnf, litteral l_a, litteral l_b, litteral l_c, litteral l_d
 cnf* fix_value(cnf* cnf, litteral l) {
   clause* cl = cnf->head;
   clause* pred = NULL;
+  clause* toRelax = NULL;
   while (cl != NULL && cl->max_litteral >= abs(l)) {
     if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l || cl->litterals[3] == l) {
       /* We satisfy the clause */
       if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+      toRelax = cl;
+      cl = cl->next;
+      free(toRelax);
     } else if (cl->litterals[0] == -l) {
       if (cl->litterals[1] == 0 && cl->litterals[2] == 0 && cl->litterals[3] == 0) {
         /* We unsatisfy the clause */
         if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+        toRelax = cl;
+        cl = cl->next;
+        free(toRelax);
       } else {
         cl->litterals[0] = 0;
+        pred = cl;
+        cl = cl->next;
       }
     } else if (cl->litterals[1] == -l) {
       if (cl->litterals[0] == 0 && cl->litterals[2] == 0 && cl->litterals[3] == 0) {
         /* We unsatisfy the clause */
         if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+        toRelax = cl;
+        cl = cl->next;
+        free(toRelax);
       } else {
         cl->litterals[1] = 0;
+        pred = cl;
+        cl = cl->next;
       }
     } else if (cl->litterals[2] == -l) {
       if (cl->litterals[0] == 0 && cl->litterals[1] == 0 && cl->litterals[3] == 0) {
         /* We unsatisfy the clause */
         if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+        toRelax = cl;
+        cl = cl->next;
+        free(toRelax);
       } else {
         cl->litterals[2] = 0;
+        pred = cl;
+        cl = cl->next;
       }
     } else if (cl->litterals[3] == -l) {
       if (cl->litterals[0] == 0 && cl->litterals[1] == 0 && cl->litterals[2] == 0) {
         /* We unsatisfy the clause */
         if (pred != NULL) { pred->next = cl->next; } else { cnf->head = cl->next; }
+        toRelax = cl;
+        cl = cl->next;
+        free(toRelax);
       } else {
         cl->litterals[3] = 0;
+        pred = cl;
+        cl = cl->next;
       }
+    } else {
+      pred = cl;
+      cl = cl->next;
     }
-    pred = cl;
-    cl = cl->next;
   }
   return cnf;
 }
@@ -101,6 +153,7 @@ value* not(cnf* cnf, value* a) {
     new_clause(cnf, r->value.l, a->value.l, 0);
     new_clause(cnf, -r->value.l, -a->value.l, 0); */
     r = memcpy(malloc(sizeof(value)), a, sizeof(value));
+    r->nb_references = 1;
     r->value.l = -r->value.l;
     return r;
   }
@@ -112,14 +165,18 @@ value* or(cnf* cnf, value* a, value* b) {
     return new_boolean(a->value.b || b->value.b);
   } else if (a->type == constant) {
     if (a->value.b == true) {
+      a->nb_references++;
       return a;
     } else {
+      b->nb_references++;
       return b;
     }
   } else if (b->type == constant) {
     if (b->value.b == true) {
+      b->nb_references++;
       return b;
     } else {
+      a->nb_references++;
       return a;
     }
   } else {
@@ -138,14 +195,18 @@ value* and(cnf* cnf, value* a, value* b) {
     return new_boolean(a->value.b && b->value.b);
   } else if (a->type == constant) {
     if (a->value.b == true) {
+      b->nb_references++;
       return b;
     } else {
+      a->nb_references++;
       return a;
     }
   } else if (b->type == constant) {
     if (b->value.b == true) {
+      a->nb_references++;
       return a;
     } else {
+      b->nb_references++;
       return b;
     }
   } else {
@@ -166,12 +227,14 @@ value* xor(cnf* cnf, value* a, value* b) {
     if (a->value.b == true) {
       return not(cnf, b);
     } else {
+      b->nb_references++;
       return b;
     }
   } else if (b->type == constant) {
     if (b->value.b == true) {
       return not(cnf, a);
     } else {
+      a->nb_references++;
       return a;
     }
   } else {
@@ -233,8 +296,10 @@ value* ch(cnf* cnf, value* a, value* b, value* c) {
     return a->value.b ? new_boolean(b->value.b) : new_boolean(c->value.b);
   } else if (a->type == constant) {
     if (a->value.b == true) {
+      b->nb_references++;
       return b;
     } else {
+      c->nb_references++;
       return c;
     }
   } else if (b->type == constant) {
