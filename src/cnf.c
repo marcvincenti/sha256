@@ -50,6 +50,24 @@ cnf* new_cnf() {
   return cnf;
 }
 
+cnf* copy_cnf(cnf* old_cnf) {
+  clause * original, * copy;
+  cnf* ret = malloc(sizeof(struct cnf_t));
+  *ret = *old_cnf;
+  if (old_cnf->head != NULL) {
+    original = old_cnf->head;
+    copy = malloc(sizeof(clause));
+    *copy = *original;
+    ret->head = copy;
+    while (original->next != NULL) {
+      original = original->next;
+      copy->next = memcpy(malloc(sizeof(clause)), original, sizeof(clause));
+      copy = copy->next;
+    }
+  }
+  return ret;
+}
+
 void new_clause(cnf* cnf, litteral l_a, litteral l_b, litteral l_c, litteral l_d) {
   clause* cl = malloc(sizeof(clause));
   cl->litterals[0] = l_a;

@@ -30,25 +30,26 @@
 
 int main (int argc, char* argv[]) {
   int i, j, k;
-  cnf* cnf;
+  cnf * cnf, * temp_cnf;
   value** hashed;
   kz_value res;
   char* prefix = "0xDEADBEEF";
   double approx;
   for (i = 1; i < 5; i++) {
     fprintf(stdout, "===== { prefix: \"%s\", nonce: %i bytes } =====\n", prefix, i);
+    cnf = new_cnf();
+    hashed = hash(cnf, prefix, i << 3);
     for (j = 1; j <= 64; j++) {
-      cnf = new_cnf();
-      hashed = hash(cnf, prefix, i << 3);
+      temp_cnf = copy_cnf(cnf);
       for (k = 0; k < j; k++) {
         if (hashed[k]->type == variable) {
-          fix_value(cnf, -hashed[k]->value.l);
+          fix_value(temp_cnf, -hashed[k]->value.l);
         } else {
           fprintf(stderr, "hashed[%i] is a constant.\n", k);
           EXIT_FAILURE;
         }
       }
-      res = karloff_zwick(cnf);
+      res = karloff_zwick(temp_cnf);
       fprintf(stdout, " { neg_bits: %i, nb_sat: %llu, nb_unsat: %llu } ", j, res.nb_sat, res.nb_unsat);
       approx = (double)res.nb_unsat / (res.nb_unsat+res.nb_sat);
       if (approx <=  WORST_VALIDATION) {
@@ -57,9 +58,10 @@ int main (int argc, char* argv[]) {
         fprintf(stdout, " => NOT OK");
       }
       fprintf(stdout, " (%f)\n", approx);
-      free_word(hashed, 256);
-      del_cnf(cnf);
+      del_cnf(temp_cnf);
     }
+    free_word(hashed, 256);
+    del_cnf(cnf);
     fprintf(stdout, "\n");
   }
   return EXIT_SUCCESS;

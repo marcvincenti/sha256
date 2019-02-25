@@ -35,6 +35,7 @@ value** copy_word(value**, value**, int);
 void free_word(value**, int);
 
 cnf* new_cnf();
+cnf* copy_cnf(cnf*);
 cnf* fix_value(cnf*, litteral);
 void del_cnf(cnf*);
 
