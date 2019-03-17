@@ -1,5 +1,13 @@
 # SHA-256
 
+This repo aim to be a cryptanalysis of SHA-2 using the PCP theorem.  
+
+The basic idea is to use the PCP theorem to prove that there are some bits
+combinations wich prevent to solve the SHA-2 function.  
+
+However, at this point, we are using an ersatz of the karloff-zwick algorithm to
+determine some bits (but without any advantage).
+
 ### Minimum digests :
 
  + Without prefix & a 1 byte nonce (max=7) :

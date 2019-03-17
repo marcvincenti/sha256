@@ -4,65 +4,73 @@
 #include "../include/karloff_zwick.h"
 #include "../include/hash.h"
 
-/* validation seuil
-"" 1 byte => 0.029461
-"" 2 bytes => 0.029344
-"" 3 bytes => 0.029433
-"" 4 bytes => 0.029502
-"0xDEADBEEF" 1 byte => 0.029394
-"0xDEADBEEF" 2 bytes => 0.029441
-"0xDEADBEEF" 3 bytes => 0.029460
-"0xDEADBEEF" 4 bytes => 0.029462
-"0xC0FFEE" 1 byte => 0.029501
-"0xC0FFEE" 2 bytes => 0.029457
-"0xC0FFEE" 3 bytes => 0.029440
-"0xC0FFEE" 4 bytes => 0.029481
-"0xBADF00D" 1 byte => 0.029329
-"0xBADF00D" 2 bytes => 0.029497
-"0xBADF00D" 3 bytes => 0.029566
-"0xBADF00D" 4 bytes => 0.029590
-"0xFEEDC0DE" 1 byte => 0.029447
-"0xFEEDC0DE" 2 bytes => 0.029467
-"0xFEEDC0DE" 3 bytes => 0.029480
-"0xFEEDC0DE" 4 bytes => 0.029548
-*/
-#define WORST_VALIDATION 0.029600
+#define INPUT_SIZE 8
 
 int main (int argc, char* argv[]) {
-  int i, j, k;
+  int i, j;
   cnf * cnf, * temp_cnf;
   value** hashed;
   kz_value res;
-  char* prefix = "0xDEADBEEF";
   double approx;
-  for (i = 1; i < 5; i++) {
-    fprintf(stdout, "===== { prefix: \"%s\", nonce: %i bytes } =====\n", prefix, i);
+  double worst_approx;
+  int worst_assign;
+  char input = 0xffffff9b;
+  boolean assignements[INPUT_SIZE];
+  value** target_hash;
+  int valid_bytes = 0;
+  int invalid_bytes = 0;
+  do {
+    target_hash = hash(NULL, &input, 0);
+    for (i = 0; i < INPUT_SIZE; i++) { assignements[i] = false; }
+    fprintf(stdout, "===== SHA256(0x%x) =====\n", input);
     cnf = new_cnf();
-    hashed = hash(cnf, prefix, i << 3);
-    for (j = 1; j <= 64; j++) {
-      temp_cnf = copy_cnf(cnf);
-      for (k = 0; k < j; k++) {
-        if (hashed[k]->type == variable) {
-          fix_value(temp_cnf, -hashed[k]->value.l);
+    hashed = hash(cnf, "", INPUT_SIZE);
+    for (i = 0; i < 256; i++) {
+      if (hashed[i]->type == variable) {
+        if (target_hash[i]->value.b == true) {
+          fix_value(cnf, hashed[i]->value.l);
         } else {
-          fprintf(stderr, "hashed[%i] is a constant.\n", k);
-          EXIT_FAILURE;
+          fix_value(cnf, -hashed[i]->value.l);
+        }
+      } else {
+        fprintf(stderr, "hashed[%i] is a constant.\n", i);
+        EXIT_FAILURE;
+      }
+    }
+    for (j = 0; j < INPUT_SIZE; j++) {
+      worst_approx = 0;
+      worst_assign = 0;
+      for (i = -INPUT_SIZE; i <= INPUT_SIZE; i++) {
+        if (i != 0 && assignements[abs(i)-1] == false) {
+          temp_cnf = copy_cnf(cnf);
+          fix_value(temp_cnf, i);
+          res = karloff_zwick(temp_cnf);
+          /* fprintf(stdout, " %i => { nb_sat: %llu, nb_unsat: %llu } \n", i, res.nb_sat, res.nb_unsat); */
+          approx = (double)res.nb_unsat / (res.nb_unsat+res.nb_sat);
+          if (worst_approx < approx) {
+            worst_approx = approx;
+            worst_assign = i;
+          }
+          del_cnf(temp_cnf);
         }
       }
-      res = karloff_zwick(temp_cnf);
-      fprintf(stdout, " { neg_bits: %i, nb_sat: %llu, nb_unsat: %llu } ", j, res.nb_sat, res.nb_unsat);
-      approx = (double)res.nb_unsat / (res.nb_unsat+res.nb_sat);
-      if (approx <=  WORST_VALIDATION) {
-        fprintf(stdout, " => OK");
+      fprintf(stdout, "worst := %i", worst_assign);
+      if ((worst_assign < 0 && ((input>>(8+worst_assign))&1) == 1)
+          || (worst_assign > 0 && ((input>>(8-worst_assign))&1) == 0)) {
+        fprintf(stdout, " (ok)\n");
+        valid_bytes++;
       } else {
-        fprintf(stdout, " => NOT OK");
+        fprintf(stdout, " (not ok)\n");
+        invalid_bytes++;
       }
-      fprintf(stdout, " (%f)\n", approx);
-      del_cnf(temp_cnf);
+      assignements[abs(worst_assign)-1] = true;
+      fix_value(cnf, -worst_assign);
     }
+    free_word(target_hash, 256);
     free_word(hashed, 256);
     del_cnf(cnf);
-    fprintf(stdout, "\n");
-  }
+    input++;
+  } while (input != 0);
+  fprintf(stdout, "=> %i / %i\n", valid_bytes, valid_bytes+invalid_bytes);
   return EXIT_SUCCESS;
 }
