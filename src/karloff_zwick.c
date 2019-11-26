@@ -10,8 +10,6 @@ litteral pick_litteral(cnf* cnf) {
       return cl->litterals[1];
     } else if (cl->litterals[2] != 0) {
       return cl->litterals[2];
-    } else if (cl->litterals[3] != 0) {
-      return cl->litterals[3];
     }
   }
   return 0;
@@ -22,26 +20,21 @@ kz_value test_litteral(cnf* cnf, litteral l) {
   kz_value res;
   res.nb_sat = res.nb_unsat = 0;
   while (cl != NULL && cl->max_litteral >= abs(l)) {
-    if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l || cl->litterals[3] == l) {
+    if (cl->litterals[0] == l || cl->litterals[1] == l || cl->litterals[2] == l) {
       /* We satisfy the clause */
       res.nb_sat++;
     } else if (cl->litterals[0] == -l) {
-      if (cl->litterals[1] == 0 && cl->litterals[2] == 0 && cl->litterals[3] == 0) {
+      if (cl->litterals[1] == 0 && cl->litterals[2] == 0) {
         /* We unsatisfy the clause */
         res.nb_unsat++;
       }
     } else if (cl->litterals[1] == -l) {
-      if (cl->litterals[0] == 0 && cl->litterals[2] == 0 && cl->litterals[3] == 0) {
+      if (cl->litterals[0] == 0 && cl->litterals[2] == 0) {
         /* We unsatisfy the clause */
         res.nb_unsat++;
       }
     } else if (cl->litterals[2] == -l) {
-      if (cl->litterals[0] == 0 && cl->litterals[1] == 0 && cl->litterals[3] == 0) {
-        /* We unsatisfy the clause */
-        res.nb_unsat++;
-      }
-    } else if (cl->litterals[3] == -l) {
-      if (cl->litterals[0] == 0 && cl->litterals[1] == 0 && cl->litterals[2] == 0) {
+      if (cl->litterals[0] == 0 && cl->litterals[1] == 0) {
         /* We unsatisfy the clause */
         res.nb_unsat++;
       }

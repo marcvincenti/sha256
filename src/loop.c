@@ -9,8 +9,8 @@ int main (int argc, char* argv[]) {
   value** hashed = hash(cnf, "", 256);
   for (i = 0; i < 256; i++) {
     if (hashed[i]->type == variable) {
-      new_clause(cnf, hashed[i]->value.l, -(i+1), 0, 0);
-      new_clause(cnf, -hashed[i]->value.l, (i+1), 0, 0);
+      new_clause(cnf, hashed[i]->value.l, -(i+1), 0);
+      new_clause(cnf, -hashed[i]->value.l, (i+1), 0);
     } else {
       fprintf(stderr, "hashed[%i] is a constant.\n", i);
       EXIT_FAILURE;
@@ -34,9 +34,6 @@ int main (int argc, char* argv[]) {
     }
     if (cl->litterals[2] != 0) {
       fprintf(stdout, "%i ", cl->litterals[2]);
-    }
-    if (cl->litterals[3] != 0) {
-      fprintf(stdout, "%i ", cl->litterals[3]);
     }
     fprintf(stdout, "0\n");
     cl = cl->next;

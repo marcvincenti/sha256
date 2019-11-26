@@ -19,7 +19,7 @@ typedef struct value_t {
 } value;
 
 typedef struct clause_t {
-  litteral litterals[4];
+  litteral litterals[3];
   litteral max_litteral;
   struct clause_t * next;
 } clause;
